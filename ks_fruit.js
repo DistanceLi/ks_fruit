@@ -13,8 +13,8 @@ let notify, thisck = '', treeid = '';
                 cookies = process.env.KS_COOKIE.split(',');
             } else if (process.env.KS_COOKIE.indexOf('\n') > -1) {
                 cookies = process.env.KS_COOKIE.split('\n');
-            } else if (process.env.KS_COOKIE.indexOf('\&') > -1) {
-                cookies = process.env.KS_COOKIE.split('\&');
+            } else if (process.env.KS_COOKIE.indexOf('&') > -1) {
+                cookies = process.env.KS_COOKIE.split('&');
             } else {
                 cookies = [process.env.KS_COOKIE];
             }

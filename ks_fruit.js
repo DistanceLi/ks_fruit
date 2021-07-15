@@ -1,4 +1,4 @@
-//v0.002
+//v.003
 
 const $ = new API();
 
@@ -13,6 +13,8 @@ let notify, thisck = '', treeid = '';
                 cookies = process.env.KS_COOKIE.split(',');
             } else if (process.env.KS_COOKIE.indexOf('\n') > -1) {
                 cookies = process.env.KS_COOKIE.split('\n');
+            } else if (process.env.KS_COOKIE.indexOf('\&') > -1) {
+                cookies = process.env.KS_COOKIE.split('\&');
             } else {
                 cookies = [process.env.KS_COOKIE];
             }
@@ -61,13 +63,15 @@ let notify, thisck = '', treeid = '';
 async function sign() {
     return new Promise(async resolve => {
         try {
-
             let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/sign/action', '{"dayNum":1}');
             await $.http.post(option).then(async response => {
                 let data = JSON.parse(response.body);
                 //console.log(response.body);
                 if (data.result == 1) {
-                    console.log('\n【签到】:' + data.data.toast);
+                    if (data.data.signInfo.hasSignIn) {
+                        console.log('\n【签到】:' + data.data.signInfo.signStatusDesc + '水滴' + data.data.signInfo.awardQuantity + 'g');
+                    }
+                    else console.log('\n【签到】:' + data.data.toast);
                 }
                 else console.log('\n【签到】:' + data.error_msg);
                 resolve();
@@ -99,7 +103,7 @@ async function watering() {
                         console.log('\n【浇水】:' + data.error_msg);
                     }
                 })
-                await $.wait(1000);
+                await $.wait(2000);
             } while (waterNum >= 10);
 
             resolve();
@@ -131,6 +135,7 @@ async function giftcard() {
                         }
                         else console.log('\n【刮刮卡】:' + data.error_msg);
                     })
+                    break;
                 }
             }
             resolve();
@@ -145,7 +150,6 @@ async function giftcard() {
 async function redpacket() {
     return new Promise(async resolve => {
         try {
-
             let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/bonus/action', '{"missionType":"DRAW_WATER","treeId":' + treeid + '}');
             await $.http.post(option).then(async response => {
                 let data = JSON.parse(response.body);
@@ -165,7 +169,6 @@ async function redpacket() {
 async function treeInfo(i, index) {
     return new Promise(async resolve => {
         try {
-
             let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/overview', '{"layoutType":"4","hyId":"orchard","enableWK":"1","source":"neb_taskcenter_banner"}');
             await $.http.post(option).then(async response => {
                 let data = JSON.parse(response.body);

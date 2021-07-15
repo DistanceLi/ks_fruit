@@ -1,3 +1,5 @@
+//v0.002
+
 const $ = new API();
 
 let cookies = [];
@@ -33,14 +35,14 @@ let notify, thisck = '', treeid = '';
         await treeInfo(i, 0);
         await $.wait(1000);
 
-        // await sign();
-        // await $.wait(1000);
+        await sign();
+        await $.wait(1000);
 
-        // await giftcard();
-        // await $.wait(1000);
+        await giftcard();
+        await $.wait(1000);
 
-        // await watering();
-        // await $.wait(1000);
+        await watering();
+        await $.wait(1000);
 
         await redpacket();
         await $.wait(1000);

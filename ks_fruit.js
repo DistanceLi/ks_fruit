@@ -1,5 +1,5 @@
 /*
-v.002
+v.004
 
 [task_local]
 30 8,12,17 * * * https://raw.githubusercontent.com/passerby-b/ks_fruit/main/ks_fruit.js

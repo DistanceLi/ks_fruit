@@ -1,4 +1,13 @@
-//v.003
+/*
+v.002
+
+[task_local]
+30 8,12,17 * * * https://raw.githubusercontent.com/passerby-b/ks_fruit/main/ks_fruit.js
+
+[Script]
+cron "30 8,12,17 * * *" script-path=https://raw.githubusercontent.com/passerby-b/ks_fruit/main/ks_fruit.js,tag=快手果园
+
+*/
 
 const $ = new API();
 

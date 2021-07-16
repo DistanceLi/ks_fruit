@@ -328,7 +328,7 @@ async function helpWatering() {
                         //console.log(response.body);
                         if (data.result == 1) {
                             count--;
-                            console.log('\n【帮好友浇水】:帮好友(' + item.nickName + ')浇水成功!');
+                            console.log('\n【帮好友浇水】:帮好友(' + myFriendsList[index].nickName + ')浇水成功!');
                         }
                         else console.log('\n【帮好友浇水】:' + data.error_msg);
                         await $.wait(1000);

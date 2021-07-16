@@ -1,7 +1,8 @@
 /*
-v1.1
+v1.2
 快手果园任务脚本,支持qx,loon,shadowrocket,surge,nodejs
 手机设备在boxjs里填写cookie
+开启抓包工具,果园浇一次水,在抓包记录里搜water,复制请求头里的cookie
 boxjs订阅地址:https://gitee.com/passerby-b/javascript/raw/master/JD/passerby-b.boxjs.json
 
 [task_local]
@@ -15,7 +16,7 @@ cron "30 8,12,17 * * *" script-path=https://raw.githubusercontent.com/passerby-b
 const $ = new API();
 
 let cookies = [];//环境变量:KS_COOKIE
-var notify, thisck = '', treeid = '';
+var notify, thisck = '', treeid = '', inviteCode = '', userid = '';
 !(async () => {
 
     // 判断环境变量里面是否有cookie
@@ -44,9 +45,12 @@ var notify, thisck = '', treeid = '';
 
     for (let i = 0; i < cookies.length; i++) {
         console.log('\r\n★★★★★开始执行第' + (i + 1) + '个账号,共' + cookies.length + '个账号★★★★★');
-        thisck = cookies[i], treeid = '';
+        thisck = cookies[i], treeid = '', inviteCode = '';
 
         await treeInfo(i, 0);
+        await $.wait(1000);
+
+        await queryUserid();
         await $.wait(1000);
 
         await sign();
@@ -100,18 +104,40 @@ var notify, thisck = '', treeid = '';
         await watering();
         await $.wait(1000);
 
+        await useFertilizer();
+        await $.wait(1000);
+
         await redpacket();
         await $.wait(1000);
 
         await treeInfo(i, 1);
-    }
 
+        console.log('助力码:' + inviteCode + '&' + userid);
+    }
 
 })().catch(async (e) => {
     console.log('', '❌失败! 原因:' + e + '!', '');
 }).finally(() => {
     $.done();
 });
+
+//查用户id
+async function queryUserid() {
+    return new Promise(async resolve => {
+        try {
+            let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/gift/query', '{"subActivity":"FERTILIZER_GIFT_BAG"}');
+            await $.http.post(option).then(async response => {
+                let data = JSON.parse(response.body);
+                if (data.result == 1) inviteCode = data.data.inviteCode, userid = data.data.userId;
+                else console.log('\n【签到】:' + data.error_msg);
+                resolve();
+            })
+        } catch (error) {
+            console.log('\n【签到】:' + error);
+            resolve();
+        }
+    })
+}
 
 //签到
 async function sign() {
@@ -389,6 +415,52 @@ async function watering() {
                 await $.wait(2000);
             } while (waterNum >= 10);
 
+            resolve();
+        } catch (error) {
+            console.log('\n【浇水】:' + error);
+            resolve();
+        }
+    })
+}
+
+//施肥
+async function useFertilizer() {
+    return new Promise(async resolve => {
+        try {
+            let waterNum = 0, waterCount = 0;
+            do {
+                let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/fertilizer/add', '{"type":"BIG_FERTILIZER"}');
+                await $.http.post(option).then(async response => {
+                    let data = JSON.parse(response.body);
+                    if (data.result == 1) {
+                        waterCount++;
+                        if (data.data.fertilizer && data.data.fertilizer.bigFertilizer.amount) waterNum = data.data.fertilizer.bigFertilizer.amount;
+                        console.log('\n【施肥】:第' + waterCount + '次浇水成功,剩余' + waterNum + '滴水!');
+                    }
+                    else {
+                        waterNum = 0;
+                        console.log('\n【施肥】:' + data.error_msg);
+                    }
+                })
+                await $.wait(2000);
+            } while (waterNum > 0);
+
+            do {
+                let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/fertilizer/add', '{"type":"SMALL_FERTILIZER"}');
+                await $.http.post(option).then(async response => {
+                    let data = JSON.parse(response.body);
+                    if (data.result == 1) {
+                        waterCount++;
+                        if (data.data.fertilizer && data.data.fertilizer.smallFertilizer.amount) waterNum = data.data.fertilizer.smallFertilizer.amount;
+                        console.log('\n【施小袋肥】:第' + waterCount + '次浇水成功,剩余' + waterNum + '滴水!');
+                    }
+                    else {
+                        waterNum = 0;
+                        console.log('\n【施小袋肥】:' + data.error_msg);
+                    }
+                })
+                await $.wait(2000);
+            } while (waterNum > 0);
             resolve();
         } catch (error) {
             console.log('\n【浇水】:' + error);

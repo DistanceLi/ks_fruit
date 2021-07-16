@@ -66,28 +66,32 @@ var notify, thisck = '', treeid = '', inviteCode = '', userid = '';
         await $.wait(1000);
 
         let w_taskList = await waterTaskList();
-        w_taskList.data.missionInfo.forEach(async item => {
-            if (item.missionStatus == 'IN_PROCESS') {
-                if (item.taskId == '22') {
-                    await helpWatering();
-                    await $.wait(1000);
+        if (w_taskList.result == 1) {
+            w_taskList.data.missionInfo.forEach(async item => {
+                if (item.missionStatus == 'IN_PROCESS') {
+                    if (item.taskId == '22') {
+                        await helpWatering();
+                        await $.wait(1000);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         let f_taskList = await fertilizerTaskList();
-        f_taskList.data.missionInfo.forEach(async item => {
-            if (item.missionStatus == 'IN_PROCESS') {
-                if (item.taskId == '10') {
-                    await fertilizerTask();
-                    await $.wait(1000);
+        if (f_taskList.result == 1) {
+            f_taskList.data.missionInfo.forEach(async item => {
+                if (item.missionStatus == 'IN_PROCESS') {
+                    if (item.taskId == '10') {
+                        await fertilizerTask();
+                        await $.wait(1000);
+                    }
+                    if (item.taskId == '11') {
+                        await searchKey();
+                        await $.wait(1000);
+                    }
                 }
-                if (item.taskId == '11') {
-                    await searchKey();
-                    await $.wait(1000);
-                }
-            }
-        });
+            });
+        }
 
         await fertilizerHelp();
         await $.wait(1000);
@@ -289,6 +293,14 @@ async function fertilizerHelp() {
                 //if (data.result == 1) console.log('\n【化肥助力】:' + data.data.popupEventList[0].tips[0]);
                 //else console.log('\n【化肥助力】:' + data.error_msg);
             })
+
+            option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/overview', '{"fid":"2428772739","cc":"share_wxms","followRefer":"151","shareMethod":"TOKEN","sharePosition":"MANURE_AID_POSITION_INVITE","kpn":"NEBULA","subBiz":"OD_MANURE_SHARE","shareId":"","source":"PASSPHRASE_BACK","shareMode":"APP","originShareId":"","enableWK":"1","layoutType":"4","shareObjectId":"3xadbx42dxer57c","shareUrlOpened":"0","hyId":"orchard","timestamp":"' + Math.round(new Date().getTime()) + '"}');
+            await $.http.post(option).then(async response => {
+                let data = JSON.parse(response.body);
+                //console.log(response.body);
+                //if (data.result == 1) console.log('\n【化肥助力】:' + data.data.popupEventList[0].tips[0]);
+                //else console.log('\n【化肥助力】:' + data.error_msg);
+            })
             resolve();
         } catch (error) {
             console.log('\n【化肥助力】:' + error);
@@ -315,6 +327,14 @@ async function waterHelp() {
                 //console.log(response.body);
                 //if (data.result == 1) console.log('\n【水滴助力】:' + data.data.popupEventList[0].tips[0]);
                 //else console.log('\n【水滴助力】:' + data.error_msg);
+            })
+
+            option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/overview', '{"fid":"2428772739","cc":"share_wxms","followRefer":"151","shareMethod":"TOKEN","sharePosition":"WATER_AID_INVITE_BUTTON","kpn":"NEBULA","subBiz":"OD_WATER_SHARE","shareId":"","source":"PASSPHRASE_BACK","shareMode":"APP","originShareId":"","enableWK":"1","layoutType":"4","shareObjectId":"3xadbx42dxer57c","shareUrlOpened":"0","hyId":"orchard","timestamp":"' + Math.round(new Date().getTime()) + '"}');
+            await $.http.post(option).then(async response => {
+                let data = JSON.parse(response.body);
+                //console.log(response.body);
+                //if (data.result == 1) console.log('\n【水滴助力】:' + data.data.popupEventList[0].tips[0]);
+                //else console.log('\n【水滴助力】:' + data.error_msg);3xadbx42dxer57c&2428772739
             })
             resolve();
         } catch (error) {
@@ -435,7 +455,7 @@ async function useFertilizer() {
                     if (data.result == 1) {
                         waterCount++;
                         if (data.data.fertilizer && data.data.fertilizer.bigFertilizer.amount) waterNum = data.data.fertilizer.bigFertilizer.amount;
-                        console.log('\n【施肥】:第' + waterCount + '次浇水成功,剩余' + waterNum + '滴水!');
+                        console.log('\n【施肥】:第' + waterCount + '次施肥成功,剩余' + waterNum + '袋化肥!');
                     }
                     else {
                         waterNum = 0;
@@ -452,7 +472,7 @@ async function useFertilizer() {
                     if (data.result == 1) {
                         waterCount++;
                         if (data.data.fertilizer && data.data.fertilizer.smallFertilizer.amount) waterNum = data.data.fertilizer.smallFertilizer.amount;
-                        console.log('\n【施小袋肥】:第' + waterCount + '次浇水成功,剩余' + waterNum + '滴水!');
+                        console.log('\n【施小袋肥】:第' + waterCount + '次施肥成功,剩余' + waterNum + '袋小化肥!');
                     }
                     else {
                         waterNum = 0;
@@ -463,7 +483,7 @@ async function useFertilizer() {
             } while (waterNum > 0);
             resolve();
         } catch (error) {
-            console.log('\n【浇水】:' + error);
+            console.log('\n【施肥】:' + error);
             resolve();
         }
     })
@@ -529,8 +549,12 @@ async function treeInfo(i, index) {
                 let data = JSON.parse(response.body);
                 if (data.result == 1) {
                     treeid = data.data.treeInfo.treeId;
-                    console.log('\n【果树信息】:' + data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent * 100).toFixed(2) + '%');
-                    if ($.env.isNode && index == 1) await notify.sendNotify('第' + (i + 1) + '个账号果树信息', data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent * 100).toFixed(2) + '%');
+                    console.log('\n【果树信息】:第' + (i + 1) + '个账号-' + data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent * 100).toFixed(2) + '%');
+
+                    if ($.env.isNode && index == 1) {
+                        $.notify('\n【果树信息】:第' + (i + 1) + '个账号', '', data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent * 100).toFixed(2) + '%')
+                        await notify.sendNotify('第' + (i + 1) + '个账号果树信息', data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent * 100).toFixed(2) + '%');
+                    }
                 }
                 else console.log('\n【果树信息】:' + data.error_msg);
                 resolve();
@@ -556,7 +580,6 @@ function urlTask(url, body) {
     };
     return option;
 }
-
 
 /*********************************** API *************************************/
 function ENV() { const e = "undefined" != typeof $task, t = "undefined" != typeof $loon, s = "undefined" != typeof $httpClient && !t, i = "function" == typeof require && "undefined" != typeof $jsbox; return { isQX: e, isLoon: t, isSurge: s, isNode: "function" == typeof require && !i, isJSBox: i, isRequest: "undefined" != typeof $request, isScriptable: "undefined" != typeof importModule } } function HTTP(e = { baseURL: "" }) { const { isQX: t, isLoon: s, isSurge: i, isScriptable: n, isNode: o } = ENV(), r = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)/; const u = {}; return ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"].forEach(l => u[l.toLowerCase()] = (u => (function (u, l) { l = "string" == typeof l ? { url: l } : l; const h = e.baseURL; h && !r.test(l.url || "") && (l.url = h ? h + l.url : l.url); const a = (l = { ...e, ...l }).timeout, c = { onRequest: () => { }, onResponse: e => e, onTimeout: () => { }, ...l.events }; let f, d; if (c.onRequest(u, l), t) f = $task.fetch({ method: u, ...l }); else if (s || i || o) f = new Promise((e, t) => { (o ? require("request") : $httpClient)[u.toLowerCase()](l, (s, i, n) => { s ? t(s) : e({ statusCode: i.status || i.statusCode, headers: i.headers, body: n }) }) }); else if (n) { const e = new Request(l.url); e.method = u, e.headers = l.headers, e.body = l.body, f = new Promise((t, s) => { e.loadString().then(s => { t({ statusCode: e.response.statusCode, headers: e.response.headers, body: s }) }).catch(e => s(e)) }) } const p = a ? new Promise((e, t) => { d = setTimeout(() => (c.onTimeout(), t(`${u} URL: ${l.url} exceeds the timeout ${a} ms`)), a) }) : null; return (p ? Promise.race([p, f]).then(e => (clearTimeout(d), e)) : f).then(e => c.onResponse(e)) })(l, u))), u } function API(e = "untitled", t = !1) { const { isQX: s, isLoon: i, isSurge: n, isNode: o, isJSBox: r, isScriptable: u } = ENV(); return new class { constructor(e, t) { this.name = e, this.debug = t, this.http = HTTP(), this.env = ENV(), this.node = (() => { if (o) { return { fs: require("fs") } } return null })(), this.initCache(); Promise.prototype.delay = function (e) { return this.then(function (t) { return ((e, t) => new Promise(function (s) { setTimeout(s.bind(null, t), e) }))(e, t) }) } } initCache() { if (s && (this.cache = JSON.parse($prefs.valueForKey(this.name) || "{}")), (i || n) && (this.cache = JSON.parse($persistentStore.read(this.name) || "{}")), o) { let e = "root.json"; this.node.fs.existsSync(e) || this.node.fs.writeFileSync(e, JSON.stringify({}), { flag: "wx" }, e => console.log(e)), this.root = {}, e = `${this.name}.json`, this.node.fs.existsSync(e) ? this.cache = JSON.parse(this.node.fs.readFileSync(`${this.name}.json`)) : (this.node.fs.writeFileSync(e, JSON.stringify({}), { flag: "wx" }, e => console.log(e)), this.cache = {}) } } persistCache() { const e = JSON.stringify(this.cache, null, 2); s && $prefs.setValueForKey(e, this.name), (i || n) && $persistentStore.write(e, this.name), o && (this.node.fs.writeFileSync(`${this.name}.json`, e, { flag: "w" }, e => console.log(e)), this.node.fs.writeFileSync("root.json", JSON.stringify(this.root, null, 2), { flag: "w" }, e => console.log(e))) } write(e, t) { if (this.log(`SET ${t}`), -1 !== t.indexOf("#")) { if (t = t.substr(1), n || i) return $persistentStore.write(e, t); if (s) return $prefs.setValueForKey(e, t); o && (this.root[t] = e) } else this.cache[t] = e; this.persistCache() } read(e) { return this.log(`READ ${e}`), -1 === e.indexOf("#") ? this.cache[e] : (e = e.substr(1), n || i ? $persistentStore.read(e) : s ? $prefs.valueForKey(e) : o ? this.root[e] : void 0) } delete(e) { if (this.log(`DELETE ${e}`), -1 !== e.indexOf("#")) { if (e = e.substr(1), n || i) return $persistentStore.write(null, e); if (s) return $prefs.removeValueForKey(e); o && delete this.root[e] } else delete this.cache[e]; this.persistCache() } notify(e, t = "", l = "", h = {}) { const a = h["open-url"], c = h["media-url"]; if (s && $notify(e, t, l, h), n && $notification.post(e, t, l + `${c ? "\n多媒体:" + c : ""}`, { url: a }), i) { let s = {}; a && (s.openUrl = a), c && (s.mediaUrl = c), "{}" === JSON.stringify(s) ? $notification.post(e, t, l) : $notification.post(e, t, l, s) } if (o || u) { const s = l + (a ? `\n点击跳转: ${a}` : "") + (c ? `\n多媒体: ${c}` : ""); if (r) { require("push").schedule({ title: e, body: (t ? t + "\n" : "") + s }) } else console.log(`${e}\n${t}\n${s}\n\n`) } } log(e) { this.debug && console.log(`[${this.name}] LOG: ${this.stringify(e)}`) } info(e) { console.log(`[${this.name}] INFO: ${this.stringify(e)}`) } error(e) { console.log(`[${this.name}] ERROR: ${this.stringify(e)}`) } wait(e) { return new Promise(t => setTimeout(t, e)) } done(e = {}) { console.log('done!'); s || i || n ? $done(e) : o && !r && "undefined" != typeof $context && ($context.headers = e.headers, $context.statusCode = e.statusCode, $context.body = e.body) } stringify(e) { if ("string" == typeof e || e instanceof String) return e; try { return JSON.stringify(e, null, 2) } catch (e) { return "[object Object]" } } }(e, t) }

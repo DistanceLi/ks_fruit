@@ -1,5 +1,8 @@
 /*
-v1.0
+v1.1
+快手果园任务脚本,支持qx,loon,shadowrocket,surge,nodejs
+手机设备在boxjs里填写cookie
+boxjs订阅地址:https://gitee.com/passerby-b/javascript/raw/master/JD/passerby-b.boxjs.json
 
 [task_local]
 30 8,12,17 * * * https://raw.githubusercontent.com/passerby-b/ks_fruit/main/ks_fruit.js
@@ -11,7 +14,7 @@ cron "30 8,12,17 * * *" script-path=https://raw.githubusercontent.com/passerby-b
 
 const $ = new API();
 
-let cookies = [];
+let cookies = [];//环境变量:KS_COOKIE
 var notify, thisck = '', treeid = '';
 !(async () => {
 
@@ -49,7 +52,7 @@ var notify, thisck = '', treeid = '';
         await sign();
         await $.wait(1000);
 
-        await fertilizerTask();
+        await myFriends();
         await $.wait(1000);
 
         await recycleBottle();
@@ -58,8 +61,29 @@ var notify, thisck = '', treeid = '';
         await threeWater();
         await $.wait(1000);
 
-        await searchKey();
-        await $.wait(1000);
+        let w_taskList = await waterTaskList();
+        w_taskList.data.missionInfo.forEach(async item => {
+            if (item.missionStatus == 'IN_PROCESS') {
+                if (item.taskId == '22') {
+                    await helpWatering();
+                    await $.wait(1000);
+                }
+            }
+        });
+
+        let f_taskList = await fertilizerTaskList();
+        f_taskList.data.missionInfo.forEach(async item => {
+            if (item.missionStatus == 'IN_PROCESS') {
+                if (item.taskId == '10') {
+                    await fertilizerTask();
+                    await $.wait(1000);
+                }
+                if (item.taskId == '11') {
+                    await searchKey();
+                    await $.wait(1000);
+                }
+            }
+        });
 
         await fertilizerHelp();
         await $.wait(1000);
@@ -67,16 +91,7 @@ var notify, thisck = '', treeid = '';
         await waterHelp();
         await $.wait(1000);
 
-        await myFriends();
-        await $.wait(1000);
-
         await stealWater();
-        await $.wait(1000);
-
-        await waterTaskList();
-        await $.wait(1000);
-
-        await helpWatering();
         await $.wait(1000);
 
         await giftcard();
@@ -176,6 +191,22 @@ async function waterTaskList() {
     })
 }
 
+//化肥任务列表
+async function fertilizerTaskList() {
+    return new Promise(async resolve => {
+        try {
+            let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/mission/query', '{"boardTypeStr":"FERTILIZER","stageStr":"NO_OP"}');
+            await $.http.post(option).then(async response => {
+                let data = JSON.parse(response.body);
+                resolve(data);
+            })
+        } catch (error) {
+            console.log('\n【化肥任务列表】:' + error);
+            resolve({});
+        }
+    })
+}
+
 //领三餐水滴
 async function threeWater() {
     return new Promise(async resolve => {
@@ -183,8 +214,7 @@ async function threeWater() {
             let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/gift/three/action', '');
             await $.http.post(option).then(async response => {
                 let data = JSON.parse(response.body);
-                //console.log(response.body);
-                if (data.result == 1) console.log('\n【领三餐水滴】:' + data.data.toast);
+                if (data.result == 1) console.log('\n【领三餐水滴】:' + (!data.data.toast ? "时间未到" : data.data.toast));
                 else console.log('\n【领三餐水滴】:' + data.error_msg);
                 resolve();
             })
@@ -315,26 +345,18 @@ async function stealWater() {
 async function helpWatering() {
     return new Promise(async resolve => {
         try {
-            let taskList = await waterTaskList(), IN_PROCESS = false, extData = {};
-            taskList.data.missionInfo.forEach(item => {
-                if (item.missionStatus == 'IN_PROCESS' && item.taskId == '22') IN_PROCESS = true; extData = item.extData;
-            });
-            if (IN_PROCESS) {
-                let count = (extData.totalTimes - extData.hasWaterTimes);
-                for (let index = 0; index < myFriendsList.length; index++) {
-                    let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/water/helpWatering', '{"friendUserId":"' + myFriendsList[index].friendUserId + '"}');
-                    await $.http.post(option).then(async response => {
-                        let data = JSON.parse(response.body);
-                        //console.log(response.body);
-                        if (data.result == 1) {
-                            count--;
-                            console.log('\n【帮好友浇水】:帮好友(' + myFriendsList[index].nickName + ')浇水成功!');
-                        }
-                        else console.log('\n【帮好友浇水】:' + data.error_msg);
-                        await $.wait(1000);
-                    })
-                    if (count == 0) break;
-                }
+            let count = myFriendsList.length < 5 ? myFriendsList.length : 5;
+            for (let index = 0; index < count; index++) {
+                let option = urlTask('https://ug-fission.kuaishou.com/rest/n/darwin/orchard/water/helpWatering', '{"friendUserId":"' + myFriendsList[index].friendUserId + '"}');
+                await $.http.post(option).then(async response => {
+                    let data = JSON.parse(response.body);
+                    console.log(response.body);
+                    if (data.result == 1) {
+                        console.log('\n【帮好友浇水】:帮好友(' + myFriendsList[index].nickName + ')浇水成功!');
+                    }
+                    else console.log('\n【帮好友浇水】:' + data.error_msg);
+                    await $.wait(1000);
+                })
             }
             resolve();
         } catch (error) {
@@ -435,8 +457,8 @@ async function treeInfo(i, index) {
                 let data = JSON.parse(response.body);
                 if (data.result == 1) {
                     treeid = data.data.treeInfo.treeId;
-                    console.log('\n【果树信息】:' + data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent) * 100 + '%');
-                    if ($.env.isNode && index == 1) await notify.sendNotify('第' + (i + 1) + '个账号果树信息', data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent.toFixed(2)) * 100 + '%');
+                    console.log('\n【果树信息】:' + data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent * 100).toFixed(2) + '%');
+                    if ($.env.isNode && index == 1) await notify.sendNotify('第' + (i + 1) + '个账号果树信息', data.data.treeInfo.progressText + ',当前阶段进度:' + (data.data.treeInfo.percent * 100).toFixed(2) + '%');
                 }
                 else console.log('\n【果树信息】:' + data.error_msg);
                 resolve();
